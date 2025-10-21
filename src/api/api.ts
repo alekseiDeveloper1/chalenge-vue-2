@@ -1,6 +1,6 @@
 type ID = string | number | null;
 
-interface Item {
+export interface Item {
     id: ID;
     parent: ID;
     path?: string[];
