@@ -3,6 +3,7 @@ type ID = string | number | null;
 interface Item {
     id: ID;
     parent: ID;
+    path?: string[];
     [key: string]: any;
 }
 
@@ -10,8 +11,30 @@ export class TreeStore {
     private items: Item[];
     private itemsMap: Map<ID, Item>;
 
+    private getPath(id: ID, items: Item[]): string[] {
+        const path: string[] = [];
+        let currentId = id;
+        while (currentId !== null) {
+            const item = items.find(i => i.id === currentId);
+            if (item) {
+                path.unshift(String(item.id));
+                currentId = item.parent;
+            } else {
+                break;
+            }
+        }
+        return path;
+    }
+
     constructor(items: Item[]) {
-        this.items = [...items];
+        const tempMap = new Map<ID, Item>();
+        items.forEach(item => tempMap.set(item.id, item));
+
+        this.items = items.map(item => ({
+            ...item,
+            path: this.getPath(item.id, items)
+        }));
+
         this.itemsMap = new Map();
         this.items.forEach(item => this.itemsMap.set(item.id, item));
     }
@@ -87,45 +110,3 @@ export class TreeStore {
         }
     }
 }
-
-// Пример использования
-const items: Item[] = [
-    { id: 1, parent: null, label: 'Айтем 1' },
-    { id: '91064cee', parent: 1, label: 'Айтем 2' },
-    { id: 3, parent: 1, label: 'Айтем 3' },
-    { id: 4, parent: '91064cee', label: 'Айтем 4' },
-    { id: 5, parent: '91064cee', label: 'Айтем 5' },
-    { id: 6, parent: '91064cee', label: 'Айтем 6' },
-    { id: 7, parent: 4, label: 'Айтем 7' },
-    { id: 8, parent: 4, label: 'Айтем 8' },
-];
-
-const ts = new TreeStore(items);
-
-// Проверка getAll()
-console.log('getAll()', ts.getAll());
-
-// Проверка getItem(7)
-console.log('getItem(7)', ts.getItem(7));
-
-// Проверка getChildren('91064cee')
-console.log("getChildren('91064cee')", ts.getChildren('91064cee'));
-
-// Проверка getAllChildren('91064cee')
-console.log("getAllChildren('91064cee')", ts.getAllChildren('91064cee'));
-
-// Проверка getAllParents(7)
-console.log('getAllParents(7)', ts.getAllParents(7));
-
-// Проверка addItem()
-ts.addItem({ id: 9, parent: 4, label: 'Айтем 9' });
-console.log('getItem(9) after addItem', ts.getItem(9));
-
-// Проверка updateItem()
-ts.updateItem({ id: 9, parent: 4, label: 'Обновленный Айтем 9' });
-console.log('getItem(9) after updateItem', ts.getItem(9));
-
-// Проверка removeItem()
-ts.removeItem('91064cee');
-console.log('getAll() after removeItem', ts.getAll());
-console.log("getItem('91064cee') after removeItem", ts.getItem('91064cee'));
