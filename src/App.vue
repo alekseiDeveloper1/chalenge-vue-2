@@ -6,8 +6,8 @@
       :rowData="rowData"
       :autoGroupColumnDef="autoGroupColumnDef"
       :getDataPath="getDataPath"
-      :gridOptions="gridOptions"
       :treeData="true"
+      :groupDefaultExpanded="-1"
     >
     </ag-grid-vue>
   </div>
@@ -16,13 +16,15 @@
 <script setup lang="ts">
 import { ref, onBeforeMount } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
-import type { ColDef, GridOptions, ValueGetterParams, ICellRendererParams, GetDataPath } from 'ag-grid-community';
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import type { ColDef, GetDataPath, ValueGetterParams } from 'ag-grid-community';
+import {ClientSideRowModelModule, ModuleRegistry } from "ag-grid-community";
+import { TreeDataModule } from "ag-grid-enterprise";
 import { TreeStore, type Item } from './api/api';
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
+
 onBeforeMount(() => {
-  ModuleRegistry.registerModules([AllCommunityModule]);
+  ModuleRegistry.registerModules([ClientSideRowModelModule, TreeDataModule]);
 });
 
 const items: Item[] = [
@@ -47,49 +49,23 @@ const columnDefs = ref<ColDef[]>([
         resizable: false,
     },
     {
-        headerName: 'Категория',
-        valueGetter: (params: ValueGetterParams) => params.data.id,
-        width: 120,
-    },
-    {
         field: 'label',
         headerName: 'Наименование',
-        cellRenderer: 'agGroupCellRenderer',
-    },
-    {
-        field: 'id',
-        headerName: 'ID',
-        hide: true,
-    },
-    {
-        field: 'parent',
-        headerName: 'Parent ID',
-        hide: true,
     },
 ]);
 
 const getDataPath: GetDataPath = (data: Item) => data.path ?? [];
+
 const autoGroupColumnDef: ColDef = {
   headerName: 'Категория',
-  cellRenderer: (params: ICellRendererParams) => {
+  minWidth: 300,
+  cellRenderer: 'agGroupCellRenderer',
+  valueGetter: params => {
       const hasChildren = ts.getChildren(params.data.id).length > 0;
       return hasChildren ? 'Группа' : 'Элемент';
   },
-  width: 320,
-  pinned: "left",
-  sort: "asc",
 };
-const gridOptions = ref<GridOptions>({
-    treeData: true,
-    animateRows: true,
-    getDataPath: (data: Item) => data.path as string[],
-    autoGroupColumnDef: {
-        headerName: 'Наименование',
-        minWidth: 300,
-        cellRenderer: 'agGroupCellRenderer',
-    },
-    groupDefaultExpanded: -1,
-});
+
 </script>
 
 <style>
