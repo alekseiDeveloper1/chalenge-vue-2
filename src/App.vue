@@ -4,8 +4,10 @@
     <ag-grid-vue
       :columnDefs="columnDefs"
       :rowData="rowData"
-      :gridOptions="gridOptions"
       :autoGroupColumnDef="autoGroupColumnDef"
+      :getDataPath="getDataPath"
+      :gridOptions="gridOptions"
+      :treeData="true"
     >
     </ag-grid-vue>
   </div>
@@ -14,9 +16,11 @@
 <script setup lang="ts">
 import { ref, onBeforeMount } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
-import type { ColDef, GridOptions, ValueGetterParams, ICellRendererParams } from 'ag-grid-community';
+import type { ColDef, GridOptions, ValueGetterParams, ICellRendererParams, GetDataPath } from 'ag-grid-community';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import { TreeStore, type Item } from './api/api';
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
 onBeforeMount(() => {
   ModuleRegistry.registerModules([AllCommunityModule]);
 });
@@ -44,10 +48,7 @@ const columnDefs = ref<ColDef[]>([
     },
     {
         headerName: 'Категория',
-        cellRenderer: (params: ICellRendererParams) => {
-            const hasChildren = ts.getChildren(params.data.id).length > 0;
-            return hasChildren ? 'Группа' : 'Элемент';
-        },
+        valueGetter: (params: ValueGetterParams) => params.data.id,
         width: 120,
     },
     {
@@ -67,6 +68,17 @@ const columnDefs = ref<ColDef[]>([
     },
 ]);
 
+const getDataPath: GetDataPath = (data: Item) => data.path ?? [];
+const autoGroupColumnDef: ColDef = {
+  headerName: 'Категория',
+  cellRenderer: (params: ICellRendererParams) => {
+      const hasChildren = ts.getChildren(params.data.id).length > 0;
+      return hasChildren ? 'Группа' : 'Элемент';
+  },
+  width: 320,
+  pinned: "left",
+  sort: "asc",
+};
 const gridOptions = ref<GridOptions>({
     treeData: true,
     animateRows: true,
@@ -78,17 +90,6 @@ const gridOptions = ref<GridOptions>({
     },
     groupDefaultExpanded: -1,
 });
-
-const autoGroupColumnDef: ColDef = {
-  headerName: 'Категория',
-        cellRenderer: (params: ICellRendererParams) => {
-            const hasChildren = ts.getChildren(params.data.id).length > 0;
-            return hasChildren ? 'Группа' : 'Элемент';
-        },
-        width: 320,
-  pinned: "left",
-  sort: "asc",
-};
 </script>
 
 <style>
