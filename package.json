@@ -10,11 +10,13 @@
     "test": "jest"
   },
   "dependencies": {
-    "ag-grid-community": "^34.2.0",
-    "ag-grid-vue3": "^34.2.0",
+    "ag-grid-community": "^34.3.0",
+    "ag-grid-enterprise": "^34.3.0",
+    "ag-grid-vue3": "^34.3.0",
     "vue": "^3.5.22"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
     "@babel/preset-typescript": "^7.27.1",
     "@types/jest": "^29.5.12",
     "@types/node": "^24.6.0",

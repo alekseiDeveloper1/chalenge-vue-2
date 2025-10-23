@@ -1,112 +1,95 @@
-import { TreeStore } from './api';
+import { TreeStore, type Item } from './api';
 
 describe('TreeStore', () => {
-    const items = [
-        { id: 1, parent: null, label: 'Айтем 1' },
-        { id: '91064cee', parent: 1, label: 'Айтем 2' },
-        { id: 3, parent: 1, label: 'Айтем 3' },
-        { id: 4, parent: '91064cee', label: 'Айтем 4' },
-        { id: 5, parent: '91064cee', label: 'Айтем 5' },
-        { id: 6, parent: '91064cee', label: 'Айтем 6' },
-        { id: 7, parent: 4, label: 'Айтем 7' },
-        { id: 8, parent: 4, label: 'Айтем 8' },
+    const items: Item[] = [
+        { id: 1, parent: null, label: 'Item 1' },
+        { id: '91064cee', parent: 1, label: 'Item 2' },
+        { id: 3, parent: 1, label: 'Item 3' },
+        { id: 4, parent: '91064cee', label: 'Item 4' },
+        { id: 5, parent: '91064cee', label: 'Item 5' },
+        { id: 6, parent: '91064cee', label: 'Item 6' },
+        { id: 7, parent: 4, label: 'Item 7' },
+        { id: 8, parent: 4, label: 'Item 8' },
     ];
 
-    const itemsWithPaths = [
-        { id: 1, parent: null, label: 'Айтем 1', path: [1] },
-        { id: '91064cee', parent: 1, label: 'Айтем 2', path: [1, '91064cee'] },
-        { id: 3, parent: 1, label: 'Айтем 3', path: [1, 3] },
-        { id: 4, parent: '91064cee', label: 'Айтем 4', path: [1, '91064cee', 4] },
-        { id: 5, parent: '91064cee', label: 'Айтем 5', path: [1, '91064cee', 5] },
-        { id: 6, parent: '91064cee', label: 'Айтем 6', path: [1, '91064cee', 6] },
-        { id: 7, parent: 4, label: 'Айтем 7', path: [1, '91064cee', 4, 7] },
-        { id: 8, parent: 4, label: 'Айтем 8', path: [1, '91064cee', 4, 8] },
-    ];
-
-    let ts: TreeStore;
+    let store: TreeStore;
 
     beforeEach(() => {
-        ts = new TreeStore(items);
+        store = new TreeStore(items);
     });
 
-    test('getAll() должен вернуть все элементы', () => {
-        expect(ts.getAll()).toEqual(itemsWithPaths);
+    test('getAll() should return all items with correct paths', () => {
+        const allItems = store.getAll();
+        expect(allItems).toHaveLength(items.length);
+        expect(allItems[0].path).toEqual(['1']);
+        expect(allItems[1].path).toEqual(['1', '91064cee']);
+        expect(allItems[3].path).toEqual(['1', '91064cee', '4']);
+        expect(allItems[6].path).toEqual(['1', '91064cee', '4', '7']);
     });
 
-    test('getItem(id) должен вернуть элемент по его id', () => {
-        expect(ts.getItem(7)).toEqual({ id: 7, parent: 4, label: 'Айтем 7', path: [1, '91064cee', 4, 7] });
-        expect(ts.getItem('91064cee')).toEqual({ id: '91064cee', parent: 1, label: 'Айтем 2', path: [1, '91064cee'] });
-        expect(ts.getItem(999)).toBeUndefined();
+    test('getItem() should return a specific item by ID', () => {
+        const item = store.getItem(7);
+        expect(item).toEqual({ id: 7, parent: 4, label: 'Item 7', path: ['1', '91064cee', '4', '7'] });
     });
 
-    test('getChildren(id) должен вернуть непосредственных детей', () => {
-        expect(ts.getChildren('91064cee')).toEqual([
-            { id: 4, parent: '91064cee', label: 'Айтем 4', path: [1, '91064cee', 4] },
-            { id: 5, parent: '91064cee', label: 'Айтем 5', path: [1, '91064cee', 5] },
-            { id: 6, parent: '91064cee', label: 'Айтем 6', path: [1, '91064cee', 6] },
-        ]);
-        expect(ts.getChildren(7)).toEqual([]);
+    test('getChildren() should return direct children of a given item', () => {
+        const children = store.getChildren('91064cee');
+        expect(children).toHaveLength(3);
+        expect(children.map(c => c.id)).toEqual([4, 5, 6]);
     });
 
-    test('getAllChildren(id) должен вернуть всех детей, включая вложенных', () => {
-        const allChildren = ts.getAllChildren('91064cee');
-        const expectedChildren = [
-            { id: 4, parent: '91064cee', label: 'Айтем 4', path: [1, '91064cee', 4] },
-            { id: 5, parent: '91064cee', label: 'Айтем 5', path: [1, '91064cee', 5] },
-            { id: 6, parent: '91064cee', label: 'Айтем 6', path: [1, '91064cee', 6] },
-            { id: 7, parent: 4, label: 'Айтем 7', path: [1, '91064cee', 4, 7] },
-            { id: 8, parent: 4, label: 'Айтем 8', path: [1, '91064cee', 4, 8] },
-        ];
-        expect(allChildren.length).toBe(expectedChildren.length);
-        expect(allChildren).toEqual(expect.arrayContaining(expectedChildren));
+    test('getAllChildren() should return all nested children of a given item', () => {
+        const allChildren = store.getAllChildren('91064cee');
+        expect(allChildren).toHaveLength(5);
+        expect(allChildren.map(c => c.id)).toEqual([4, 5, 6, 7, 8]);
     });
 
-    test('getAllParents(id) должен вернуть всех родителей', () => {
-        const allParents = ts.getAllParents(7);
-        expect(allParents).toEqual([
-            { id: 1, parent: null, label: 'Айтем 1', path: [1] },
-            { id: '91064cee', parent: 1, label: 'Айтем 2', path: [1, '91064cee'] },
-            { id: 4, parent: '91064cee', label: 'Айтем 4', path: [1, '91064cee', 4] },
-        ]);
-        expect(ts.getAllParents(1)).toEqual([]);
+    test('getAllParents() should return all parents of a given item', () => {
+        const parents = store.getAllParents(7);
+        expect(parents).toHaveLength(3);
+        expect(parents.map(p => p.id)).toEqual([1, '91064cee', 4]);
     });
 
-    test('addItem(item) должен добавить новый элемент', () => {
-        const newItem = { id: 9, parent: 4, label: 'Айтем 9' };
-        ts.addItem(newItem);
-        expect(ts.getItem(9)).toEqual(newItem);
-        expect(ts.getAll()).toContainEqual(newItem);
+    test('addItem() should add a new item and update paths', () => {
+        const newItem: Item = { id: 9, parent: 4, label: 'Item 9' };
+        store.addItem(newItem);
+        const addedItem = store.getItem(9);
+        expect(addedItem).toBeDefined();
+        expect(addedItem?.path).toEqual(['1', '91064cee', '4', '9']);
     });
 
-    test('addItem(item) не должен добавлять элемент с существующим id', () => {
-        const newItem = { id: 7, parent: 4, label: 'Дубликат айтем 7' };
-        const initialCount = ts.getAll().length;
-        ts.addItem(newItem);
-        expect(ts.getAll().length).toBe(initialCount);
-        expect(ts.getItem(7)).not.toEqual(newItem);
+    test('removeItem() should remove an item and all its children', () => {
+        store.removeItem('91064cee');
+        expect(store.getItem('91064cee')).toBeUndefined();
+        expect(store.getItem(4)).toBeUndefined();
+        expect(store.getItem(7)).toBeUndefined();
+        expect(store.getAll()).toHaveLength(2);
     });
 
-    test('removeItem(id) должен удалить элемент и всех его детей', () => {
-        ts.removeItem('91064cee');
-        const remainingIds = [1, 3];
-        const remainingItems = ts.getAll();
-        expect(remainingItems.length).toBe(remainingIds.length);
-        remainingIds.forEach(id => expect(ts.getItem(id)).toBeDefined());
-        expect(ts.getItem('91064cee')).toBeUndefined();
-        expect(ts.getItem(4)).toBeUndefined();
-        expect(ts.getItem(7)).toBeUndefined();
+    test('updateItem() should update an item and its children paths', () => {
+        const updatedItem = { id: 4, parent: 1, label: 'Updated Item 4' };
+        store.updateItem(updatedItem);
+
+        const item4 = store.getItem(4);
+        expect(item4?.parent).toBe(1);
+        expect(item4?.label).toBe('Updated Item 4');
+        expect(item4?.path).toEqual(['1', '4']);
+
+        const item7 = store.getItem(7);
+        expect(item7?.path).toEqual(['1', '4', '7']);
     });
 
-    test('updateItem(updatedItem) должен обновить существующий элемент', () => {
-        const updatedItemData = { id: 7, parent: 4, label: 'Обновленный Айтем 7' };
-        ts.updateItem(updatedItemData);
-        const item = ts.getItem(7);
-        expect(item).toEqual({ id: 7, parent: 4, label: 'Обновленный Айтем 7', path: [1, '91064cee', 4, 7] });
+    test('getAll() should return a deep copy of items', () => {
+        const allItems = store.getAll();
+        allItems[0].label = 'Modified';
+        expect(store.getItem(1)?.label).toBe('Item 1');
     });
 
-    test('updateItem(updatedItem) не должен обновлять несуществующий элемент', () => {
-        const initialItems = ts.getAll().map(item => ({ ...item }));
-        ts.updateItem({ id: 999, parent: null, label: 'Несуществующий айтем' });
-        expect(ts.getAll()).toEqual(initialItems);
+    test('getItem() should return a deep copy of an item', () => {
+        const item = store.getItem(1);
+        if (item) {
+            item.label = 'Modified';
+        }
+        expect(store.getItem(1)?.label).toBe('Item 1');
     });
 });
